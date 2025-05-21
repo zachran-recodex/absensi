@@ -49,6 +49,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | Examples:	my-controller/index	-> my_controller/index
 |		my-controller/my-method	-> my_controller/my_method
 */
-$route['default_controller'] = 'welcome';
+$route['default_controller'] = 'auth';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
+
+// Rute untuk fitur lokasi absen
+$route['location'] = 'location';
+$route['location/save'] = 'location/save';
+$route['location/get_location/(:num)'] = 'location/get_location/$1';

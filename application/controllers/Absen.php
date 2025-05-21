@@ -76,8 +76,6 @@ public function absen_keluar()
 		$waktu = $data['waktu']; 
 		
 		$id_user = $this->session->userdata('id_user'); 
-		$preset_latitude = -0.044107;  
-		$preset_longitude = 109.344088; 
 	
 		// Validasi pengguna harus login
 		if (!$id_user) {
@@ -90,10 +88,19 @@ public function absen_keluar()
 			echo json_encode(['success' => false, 'message' => 'ID pengguna tidak sesuai dengan ID pada video.']);
 			return;
 		}
+		
+		// Load model untuk mendapatkan lokasi absen karyawan
+		$this->load->model('Location_model');
+		$location = $this->Location_model->get_location($id_user);
+		
+		// Jika lokasi belum diatur, gunakan lokasi default
+		$preset_latitude = $location['location_latitude'] ?? -0.044107;
+		$preset_longitude = $location['location_longitude'] ?? 109.344088;
+		$max_distance = $location['location_radius'] ?? 100;
 	
 		// Validasi jarak lokasi
 		$distance = calculate_distance($preset_latitude, $preset_longitude, $latitude, $longitude);
-		if ($distance > 100) {
+		if ($distance > $max_distance) {
 			echo json_encode(['success' => false, 'message' => 'Anda berada di luar jangkauan lokasi absensi.']);
 			return;
 		}
@@ -135,8 +142,15 @@ public function absen_keluar()
 		$waktu = $data['waktu'];
 	
 		$id_user = $this->session->userdata('id_user');
-		$preset_latitude = -0.044107;
-		$preset_longitude = 109.344088;
+
+		// Load model untuk mendapatkan lokasi absen karyawan
+		$this->load->model('Location_model');
+		$location = $this->Location_model->get_location($id_user);
+
+		// Jika lokasi belum diatur, gunakan lokasi default
+		$preset_latitude = $location['location_latitude'] ?? -0.044107;
+		$preset_longitude = $location['location_longitude'] ?? 109.344088;
+		$max_distance = $location['location_radius'] ?? 100;
 	
 		// Validasi pengguna harus login
 		if (!$id_user) {
@@ -152,8 +166,8 @@ public function absen_keluar()
 	
 		// Validasi jarak lokasi
 		$distance = calculate_distance($preset_latitude, $preset_longitude, $latitude, $longitude);
-		if ($distance > 100) {
-			echo json_encode(['success' => false, 'message' => 'Anda berada di luar jangkauan lokasi absensi. Jarak Anda: ' . round($distance, 2) . ' meter. Batas maksimal adalah 100 meter.']);
+		if ($distance > $max_distance) {
+			echo json_encode(['success' => false, 'message' => 'Anda berada di luar jangkauan lokasi absensi. Jarak Anda: ' . round($distance, 2) . ' meter. Batas maksimal adalah ' . $max_distance . ' meter.']);
 			return;
 		}
 	

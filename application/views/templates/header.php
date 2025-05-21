@@ -45,6 +45,9 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+	<!-- Leaflet CSS dan JS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 	<style>
 		.notification {
@@ -277,6 +280,12 @@
 					<a class="nav-link" href="<?= base_url('admin'); ?>">
 						<i class="fas fa-fw fa-user-tie"></i>
 						<span>Data User</span></a>
+				</li>
+
+				<li class="nav-item">
+					<a class="nav-link" href="<?= base_url('location'); ?>">
+						<i class="fas fa-fw fa-map-pin"></i>
+						<span>Lokasi Absen</span></a>
 				</li>
 			<?php endif; ?>
 			<li class="nav-item">
