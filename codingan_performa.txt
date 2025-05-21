@@ -1,0 +1,504 @@
+<div class="card">
+     
+
+
+
+<div class="card-header">
+
+<!-- Page Heading -->
+<h1 class="h3 mb-3 text-gray-800">Performa Tiap Jenis Pengadaan</h1>
+
+<div class="card shadow mb-4">
+	<div class="card-header py-2">
+		<div class="my-2"></div>
+		<?php echo $this->session->flashdata('message'); ?>
+		
+	</div>
+	<div class="card-body">
+		<div class="table-responsive">
+			<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+				<thead>
+					<tr>
+						<th>No</th>
+						<th>Judul</th>
+						<th>Jenis Pengadaan</th>
+						<th>Nama PBJ Team</th>
+						<th>User PR Masuk</th>
+						<th>PBJ TEAM</th>
+						<th>Tanggal PO Closed</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<?php
+					if (!function_exists('hitungHariKerja')) {
+						function hitungHariKerja($start_date, $end_date) {
+							// Periksa apakah $start_date adalah string, jika ya, konversi ke DateTime
+							if (is_string($start_date)) {
+								try {
+									$start_date = new DateTime($start_date);
+								} catch (Exception $e) {
+									return 0; // Kembalikan 0 jika terjadi kesalahan saat konversi
+								}
+							}
+					
+							// Periksa apakah $end_date adalah string, jika ya, konversi ke DateTime
+							if (is_string($end_date)) {
+								try {
+									$end_date = new DateTime($end_date);
+								} catch (Exception $e) {
+									return 0; // Kembalikan 0 jika terjadi kesalahan saat konversi
+								}
+							}
+					
+							// Pastikan $start_date dan $end_date adalah objek DateTime
+							if (!($start_date instanceof DateTime) || !($end_date instanceof DateTime)) {
+								return 0; // Kembalikan 0 jika salah satu parameter bukan DateTime
+							}
+					
+							if ($start_date > $end_date) {
+								return 0; // Tidak ada hari kerja jika tanggal mulai lebih besar dari tanggal akhir
+							}
+							
+							$work_days = 0;
+							$current_date = clone $start_date; // Clone hanya jika $start_date adalah DateTime
+							while ($current_date <= $end_date) {
+								$day_of_week = $current_date->format('N');
+								if ($day_of_week < 6) { // 1 = Senin, 7 = Minggu
+									$work_days++;
+								}
+								$current_date->modify('+1 day');
+							}
+							return $work_days;
+						}
+					}
+					
+					
+					
+					$no = 1;
+					foreach ($performance_data as $data): ?>
+						<tr>
+							<td><?= $no++ ?></td>
+							<td><?= $data['nm_pengadaan']; ?></td>
+							<td><?= $data['jenis_pengadaan']; ?></td>
+							<td><?= $data['user_nama']; ?></td>
+							<td>
+                                <?php
+                                // Fungsi hitungHariKerja untuk menghitung hari kerja
+                               
+
+                                // Inisialisasi nilai performa dan kelas tombol
+                                $performance = 'Buruk';
+                                $percentage = 0;
+                                $btn_class = 'btn-danger';
+
+                                if ($data['status'] === 'Po Closed') {
+                                    // Logika performa berdasarkan jenis pengadaan dan waktu pelaksanaan
+                                    if ($data['jenis_pengadaan'] == 'Pengadaan Langsung') {
+                                        if ($data['waktu_pelaksanaan'] == 'SPK') {
+                                            if ($data['case'] == 'Case 1') {
+                                                $performance = 100;
+                                                $btn_class = 'btn-success';
+                                            } elseif ($data['case'] == 'Case 2') {
+                                                $tgl_per_masuk = new DateTime($data['tgl_per_masuk']);
+                                                $waktu_mulai = new DateTime($data['waktu_mulai']);
+                                                $interval = hitungHariKerja($tgl_per_masuk, $waktu_mulai);
+                                                $percentage = ($interval <= 16) ? ($interval / 16) * 100 : 100;
+
+                                                $performance = round($percentage);
+                                                if ($percentage < 60) {
+                                                    $btn_class = 'btn-danger';
+                                                } elseif ($percentage >= 60 && $percentage < 80) {
+                                                    $btn_class = 'btn-warning';
+                                                } else {
+                                                    $btn_class = 'btn-success';
+                                                }
+                                            }
+                                        } elseif ($data['waktu_pelaksanaan'] == 'SPMK') {
+                                            $performance = 100;
+                                            $btn_class = 'btn-success';
+                                        }
+                                    } elseif ($data['jenis_pengadaan'] == 'Penunjukan Langsung') {
+                                        if ($data['waktu_pelaksanaan'] == 'PO') {
+                                            if ($data['case'] == 'Case 1') {
+                                                $performance = 100;
+                                                $btn_class = 'btn-success';
+                                            } elseif ($data['case'] == 'Case 2') {
+                                                $tgl_per_masuk = new DateTime($data['tgl_per_masuk']);
+                                                $waktu_mulai = new DateTime($data['waktu_mulai']);
+                                                $interval = hitungHariKerja($tgl_per_masuk, $waktu_mulai);
+                                                $percentage = ($interval <= 40) ? ($interval / 40) * 100 : 100;
+
+                                                $performance = round($percentage);
+                                                if ($percentage < 60) {
+                                                    $btn_class = 'btn-danger';
+                                                } elseif ($percentage >= 60 && $percentage < 80) {
+                                                    $btn_class = 'btn-warning';
+                                                } else {
+                                                    $btn_class = 'btn-success';
+                                                }
+                                            }
+                                        } elseif ($data['waktu_pelaksanaan'] == 'DO' || $data['waktu_pelaksanaan'] == 'SO') {
+                                            $performance = 100;
+                                            $btn_class = 'btn-success';
+                                        }
+                                    } elseif ($data['jenis_pengadaan'] == 'Perlelangan Terbatas') {
+                                        if ($data['waktu_pelaksanaan'] == 'PO') {
+                                            if ($data['case'] == 'Case 1') {
+                                                $performance = 100;
+                                                $btn_class = 'btn-success';
+                                            } elseif ($data['case'] == 'Case 2') {
+                                                $tgl_per_masuk = new DateTime($data['tgl_per_masuk']);
+                                                $waktu_mulai = new DateTime($data['waktu_mulai']);
+                                                $interval = hitungHariKerja($tgl_per_masuk, $waktu_mulai);
+                                                $percentage = ($interval <= 45) ? ($interval / 45) * 100 : 100;
+
+                                                $performance = round($percentage);
+                                                if ($percentage < 60) {
+                                                    $btn_class = 'btn-danger';
+                                                } elseif ($percentage >= 60 && $percentage < 80) {
+                                                    $btn_class = 'btn-warning';
+                                                } else {
+                                                    $btn_class = 'btn-success';
+                                                }
+                                            }
+                                        } elseif ($data['waktu_pelaksanaan'] == 'DO' || $data['waktu_pelaksanaan'] == 'SO') {
+                                            $performance = 100;
+                                            $btn_class = 'btn-success';
+                                        }
+                                    } elseif ($data['jenis_pengadaan'] == 'Penunjukan Langsung LOI') {
+                                        if ($data['waktu_pelaksanaan'] == 'SPK') {
+                                            $performance = 100;
+                                            $btn_class = 'btn-success';
+                                            if ($data['case'] == 'Case 2') {
+                                                $performance = round($percentage);
+                                                if ($percentage < 60) {
+                                                    $btn_class = 'btn-danger';
+                                                } elseif ($percentage >= 60 && $percentage < 80) {
+                                                    $btn_class = 'btn-warning';
+                                                } else {
+                                                    $btn_class = 'btn-success';
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    $performance = 'Tidak Disetujui';
+                                    $btn_class = 'btn-secondary';
+                                }
+                                ?>
+                                <button class="btn <?= $btn_class; ?>">
+                                    <?= is_numeric($performance) ? $performance . '%' : $performance; ?>
+                                </button>
+                            </td>
+
+
+						<td>
+                        <?php
+
+// Inisialisasi variabel dan kode lainnya
+$pbjteam = 'Buruk';
+$nego = 'Buruk';
+$upload_mitra = 'Buruk';
+$po = 'Buruk';
+$percentage = 0;
+$btn_class = 'btn-danger';
+
+if ($data['jenis_pengadaan'] == 'Pengadaan Langsung' || $data['jenis_pengadaan'] == 'Penunjukan Langsung LOI') {
+// Ambil tanggal input dari data
+$tgl_input = $data['tgl_input'];
+
+$tanggal_nego = $data['approve_tm1'];
+$nego_skp = $data['kirim_dok1'];
+$kirim_kontrak = $data['nego_skp1'];
+
+
+// Ambil upload_date dari tabel upload_hps berdasarkan id_upload_hps
+$query_upload_date_pbj = "SELECT upm FROM pengadaan_langsung WHERE id_pengadaan_langsung = ?";
+$stmt_upload_date_pbj = $this->db->query($query_upload_date_pbj, array($data['id_pengadaan_langsung']));
+$row_upload_date_pbj = $stmt_upload_date_pbj->row_array();
+$upload_date_pbj = isset($row_upload_date_pbj['upm']) ? new DateTime($row_upload_date_pbj['upm']) : new DateTime(); // Default to current date if not found
+
+
+// Ambil upload_date dari tabel nego berdasarkan id_nego
+$query_upload_date_nego = "SELECT nego FROM pengadaan_langsung WHERE id_pengadaan_langsung = ?";
+$stmt_upload_date_nego = $this->db->query($query_upload_date_nego, array($data['id_pengadaan_langsung']));
+$row_upload_date_nego = $stmt_upload_date_nego->row_array();
+$upload_date_nego = isset($row_upload_date_nego['nego']) ? new DateTime($row_upload_date_nego['nego']) : new DateTime(); // Default to current date if not found
+
+
+
+
+
+$query_upload_buat_po = "SELECT buat_po FROM pengadaan_langsung WHERE id_pengadaan_langsung = ?";
+$stmt_upload_buat_po = $this->db->query($query_upload_buat_po, array($data['id_pengadaan_langsung']));
+$row_upload_buat_po = $stmt_upload_buat_po->row_array();
+$upload_buat_po = isset($row_upload_buat_po['buat_po']) ? new DateTime($row_upload_buat_po['buat_po']) : new DateTime(); // Default to current date if not found
+
+
+// Hitung interval hari kerja
+$interval_pbj = hitungHariKerja($tgl_input, $upload_date_pbj);
+$interval_nego = hitungHariKerja($tanggal_nego, $upload_date_nego);
+$interval_nego_skp = hitungHariKerja($nego_skp, $upload_buat_po);
+
+
+// Akumulasi semua interval
+$total_interval = $interval_pbj + $interval_nego + $interval_nego_skp ;
+
+// Tentukan persentase berdasarkan total interval
+if ($total_interval > 9) {
+    $percentage = round(9 / $total_interval * 100);
+} else {
+    $percentage = 100;
+}
+
+// Tentukan kelas tombol berdasarkan persentase
+if ($percentage < 60) {
+    $btn_class = 'btn-danger';
+} elseif ($percentage >= 60 && $percentage < 80) {
+    $btn_class = 'btn-warning';
+} else {
+    $btn_class = 'btn-success';
+}
+} elseif ($data['jenis_pengadaan'] == 'Penunjukan Langsung') {
+$tgl_input = $data['tgl_input'];
+$upm2 = $data['upm2'];
+$approve_tm2 = $data['approve_tm2'];
+$undangan1 = $data['undangan1'];
+$masuk_dok1 = $data['masuk_dok1'];
+$nego_skp2 = $data['nego_skp2'];
+$kirim_skp1 = $data['kirim_skp1'];
+$buat_kontrak1 = $data['buat_kontrak1'];
+$kirim_kontrak2 = $data['kirim_kontrak2'];
+$buat_po2 = $data['buat_po2'];
+
+
+// Ambil upload_date dari tabel upload_hps berdasarkan id_upload_hps
+$query_upload_date_pbj = "SELECT upm FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_date_pbj = $this->db->query($query_upload_date_pbj, array($data['id_penunjukan_langsung']));
+$row_upload_date_pbj = $stmt_upload_date_pbj->row_array();
+$upm = isset($row_upload_date_pbj['upm']) ? new DateTime($row_upload_date_pbj['upm']) : new DateTime(); // Default to current date if not found
+
+$query_upload_date_approve_tm = "SELECT approve_tm FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_date_approve_tm = $this->db->query($query_upload_date_approve_tm, array($data['id_penunjukan_langsung']));
+$row_upload_date_approve_tm = $stmt_upload_date_approve_tm->row_array();
+$approve_tm = isset($row_upload_date_approve_tm['approve_tm']) ? new DateTime($row_upload_date_approve_tm['approve_tm']) : new DateTime(); // Default to current date if not found
+
+// Ambil upload_date dari tabel nego berdasarkan id_nego
+$query_upload_date_nego = "SELECT undangan FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_date_nego = $this->db->query($query_upload_date_nego, array($data['id_penunjukan_langsung']));
+$row_upload_date_nego = $stmt_upload_date_nego->row_array();
+$undangan = isset($row_upload_date_nego['undangan']) ? new DateTime($row_upload_date_nego['undangan']) : new DateTime(); // Default to current date if not found
+
+
+// Ambil upload_date dari tabel po berdasarkan id_penunjukan_langsung
+$query_upload_date_po = "SELECT masuk_dok FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_date_po = $this->db->query($query_upload_date_po, array($data['id_penunjukan_langsung']));
+$row_upload_date_po = $stmt_upload_date_po->row_array();
+$masuk_dok = isset($row_upload_date_po['masuk_dok']) ? new DateTime($row_upload_date_po['masuk_dok']) : new DateTime(); // Default to current date if not found
+
+$query_upload_nego_skp = "SELECT nego_skp FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_nego_skp = $this->db->query($query_upload_nego_skp, array($data['id_penunjukan_langsung']));
+$row_upload_nego_skp = $stmt_upload_nego_skp->row_array();
+$nego_skp = isset($row_upload_nego_skp['nego_skp']) ? new DateTime($row_upload_nego_skp['nego_skp']) : new DateTime(); // Default to current date if not found
+
+
+$query_upload_kirim_skp = "SELECT kirim_skp FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_kirim_skp = $this->db->query($query_upload_kirim_skp, array($data['id_penunjukan_langsung']));
+$row_upload_kirim_skp = $stmt_upload_kirim_skp->row_array();
+$kirim_skp = isset($row_upload_kirim_skp['kirim_skp']) ? new DateTime($row_upload_kirim_skp['kirim_skp']) : new DateTime(); // Default to current date if not found
+
+
+$query_upload_buat_kontrak = "SELECT buat_kontrak FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_buat_kontrak = $this->db->query($query_upload_buat_kontrak, array($data['id_penunjukan_langsung']));
+$row_upload_buat_kontrak = $stmt_upload_buat_kontrak->row_array();
+$buat_kontrak = isset($row_upload_buat_kontrak['buat_kontrak']) ? new DateTime($row_upload_buat_kontrak['buat_kontrak']) : new DateTime(); // Default to current date if not found
+
+
+$query_upload_kirim_kontrak = "SELECT kirim_kontrak FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_kirim_kontrak = $this->db->query($query_upload_kirim_kontrak, array($data['id_penunjukan_langsung']));
+$row_upload_kirim_kontrak = $stmt_upload_kirim_kontrak->row_array();
+$kirim_kontrak = isset($row_upload_kirim_kontrak['kirim_kontrak']) ? new DateTime($row_upload_kirim_kontrak['kirim_kontrak']) : new DateTime(); // Default to current date if not found
+
+
+$query_upload_buat_po = "SELECT buat_po FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+$stmt_upload_buat_po = $this->db->query($query_upload_buat_po, array($data['id_penunjukan_langsung']));
+$row_upload_buat_po = $stmt_upload_buat_po->row_array();
+$buat_po = isset($row_upload_buat_po['buat_po']) ? new DateTime($row_upload_buat_po['buat_po']) : new DateTime(); // Default to current date if not found
+
+
+// Hitung interval hari kerja
+$interval_pbj = hitungHariKerja($tgl_input, $upm);
+$interval_approve = hitungHariKerja($upm2, $approve_tm);
+$interval_nego = hitungHariKerja($approve_tm2, $undangan);
+$interval_masuk_dok = hitungHariKerja($undangan1, $masuk_dok);
+$interval_dok = hitungHariKerja($masuk_dok1, $nego_skp);
+$interval_nego_skp = hitungHariKerja($nego_skp2, $kirim_skp);
+$interval_kirim_kontrak = hitungHariKerja($kirim_skp1, $buat_kontrak);
+$interval_buat_po = hitungHariKerja($buat_kontrak1, $kirim_kontrak);
+$interval_buat_po1 = hitungHariKerja($kirim_kontrak2, $buat_po);
+
+
+// Akumulasi semua interval
+$total_interval = $interval_pbj + $interval_approve + $interval_nego + $interval_masuk_dok + $interval_dok + $interval_nego_skp + $interval_kirim_kontrak + $interval_buat_po + $interval_buat_po1;
+
+// Tentukan persentase berdasarkan total interval
+if ($total_interval > 14) {
+    $percentage = round(14 / $total_interval * 100);
+} else {
+    $percentage = 100;
+}
+
+// Tentukan kelas tombol berdasarkan persentase
+if ($percentage < 60) {
+    $btn_class = 'btn-danger';
+} elseif ($percentage >= 60 && $percentage < 80) {
+    $btn_class = 'btn-warning';
+} else {
+    $btn_class = 'btn-success';
+}
+} elseif ($data['jenis_pengadaan'] == 'Perlelangan Terbatas') {
+	$tgl_input = $data['tgl_input'];
+	$upm2 = $data['upm2'];
+	$approve_tm2 = $data['approve_tm2'];
+	$undangan1 = $data['undangan1'];
+	$masuk_dok1 = $data['masuk_dok1'];
+	$nego_skp2 = $data['nego_skp2'];
+	$kirim_skp1 = $data['kirim_skp1'];
+	$buat_kontrak1 = $data['buat_kontrak1'];
+	$kirim_kontrak2 = $data['kirim_kontrak2'];
+	$buat_po2 = $data['buat_po2'];
+	
+	
+	// Ambil upload_date dari tabel upload_hps berdasarkan id_upload_hps
+	$query_upload_date_pbj = "SELECT upm FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_date_pbj = $this->db->query($query_upload_date_pbj, array($data['id_penunjukan_langsung']));
+	$row_upload_date_pbj = $stmt_upload_date_pbj->row_array();
+	$upm = isset($row_upload_date_pbj['upm']) ? new DateTime($row_upload_date_pbj['upm']) : new DateTime(); // Default to current date if not found
+	
+	$query_upload_date_approve_tm = "SELECT approve_tm FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_date_approve_tm = $this->db->query($query_upload_date_approve_tm, array($data['id_penunjukan_langsung']));
+	$row_upload_date_approve_tm = $stmt_upload_date_approve_tm->row_array();
+	$approve_tm = isset($row_upload_date_approve_tm['approve_tm']) ? new DateTime($row_upload_date_approve_tm['approve_tm']) : new DateTime(); // Default to current date if not found
+	
+	// Ambil upload_date dari tabel nego berdasarkan id_nego
+	$query_upload_date_nego = "SELECT undangan FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_date_nego = $this->db->query($query_upload_date_nego, array($data['id_penunjukan_langsung']));
+	$row_upload_date_nego = $stmt_upload_date_nego->row_array();
+	$undangan = isset($row_upload_date_nego['undangan']) ? new DateTime($row_upload_date_nego['undangan']) : new DateTime(); // Default to current date if not found
+	
+	
+	// Ambil upload_date dari tabel po berdasarkan id_penunjukan_langsung
+	$query_upload_date_po = "SELECT masuk_dok FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_date_po = $this->db->query($query_upload_date_po, array($data['id_penunjukan_langsung']));
+	$row_upload_date_po = $stmt_upload_date_po->row_array();
+	$masuk_dok = isset($row_upload_date_po['masuk_dok']) ? new DateTime($row_upload_date_po['masuk_dok']) : new DateTime(); // Default to current date if not found
+	
+	$query_upload_nego_skp = "SELECT nego_skp FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_nego_skp = $this->db->query($query_upload_nego_skp, array($data['id_penunjukan_langsung']));
+	$row_upload_nego_skp = $stmt_upload_nego_skp->row_array();
+	$nego_skp = isset($row_upload_nego_skp['nego_skp']) ? new DateTime($row_upload_nego_skp['nego_skp']) : new DateTime(); // Default to current date if not found
+	
+	
+	$query_upload_kirim_skp = "SELECT kirim_skp FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_kirim_skp = $this->db->query($query_upload_kirim_skp, array($data['id_penunjukan_langsung']));
+	$row_upload_kirim_skp = $stmt_upload_kirim_skp->row_array();
+	$kirim_skp = isset($row_upload_kirim_skp['kirim_skp']) ? new DateTime($row_upload_kirim_skp['kirim_skp']) : new DateTime(); // Default to current date if not found
+	
+	
+	$query_upload_buat_kontrak = "SELECT buat_kontrak FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_buat_kontrak = $this->db->query($query_upload_buat_kontrak, array($data['id_penunjukan_langsung']));
+	$row_upload_buat_kontrak = $stmt_upload_buat_kontrak->row_array();
+	$buat_kontrak = isset($row_upload_buat_kontrak['buat_kontrak']) ? new DateTime($row_upload_buat_kontrak['buat_kontrak']) : new DateTime(); // Default to current date if not found
+	
+	
+	$query_upload_kirim_kontrak = "SELECT kirim_kontrak FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_kirim_kontrak = $this->db->query($query_upload_kirim_kontrak, array($data['id_penunjukan_langsung']));
+	$row_upload_kirim_kontrak = $stmt_upload_kirim_kontrak->row_array();
+	$kirim_kontrak = isset($row_upload_kirim_kontrak['kirim_kontrak']) ? new DateTime($row_upload_kirim_kontrak['kirim_kontrak']) : new DateTime(); // Default to current date if not found
+	
+	
+	$query_upload_buat_po = "SELECT buat_po FROM penunjukan_langsung WHERE id_penunjukan_langsung = ?";
+	$stmt_upload_buat_po = $this->db->query($query_upload_buat_po, array($data['id_penunjukan_langsung']));
+	$row_upload_buat_po = $stmt_upload_buat_po->row_array();
+	$buat_po = isset($row_upload_buat_po['buat_po']) ? new DateTime($row_upload_buat_po['buat_po']) : new DateTime(); // Default to current date if not found
+	
+	
+	// Hitung interval hari kerja
+	$interval_pbj = hitungHariKerja($tgl_input, $upm);
+	$interval_approve = hitungHariKerja($upm2, $approve_tm);
+	$interval_nego = hitungHariKerja($approve_tm2, $undangan);
+	$interval_masuk_dok = hitungHariKerja($undangan1, $masuk_dok);
+	$interval_dok = hitungHariKerja($masuk_dok1, $nego_skp);
+	$interval_nego_skp = hitungHariKerja($nego_skp2, $kirim_skp);
+	$interval_kirim_kontrak = hitungHariKerja($kirim_skp1, $buat_kontrak);
+	$interval_buat_po = hitungHariKerja($buat_kontrak1, $kirim_kontrak);
+	$interval_buat_po1 = hitungHariKerja($kirim_kontrak2, $buat_po);
+	
+	
+	// Akumulasi semua interval
+	$total_interval = $interval_pbj + $interval_approve + $interval_nego + $interval_masuk_dok + $interval_dok + $interval_nego_skp + $interval_kirim_kontrak + $interval_buat_po + $interval_buat_po1;
+	
+	// Tentukan persentase berdasarkan total interval
+	if ($total_interval > 18) {
+		$percentage = round(18 / $total_interval * 100);
+	} else {
+		$percentage = 100;
+	}
+	
+	// Tentukan kelas tombol berdasarkan persentase
+	if ($percentage < 60) {
+		$btn_class = 'btn-danger';
+	} elseif ($percentage >= 60 && $percentage < 80) {
+		$btn_class = 'btn-warning';
+	} else {
+		$btn_class = 'btn-success';
+	}}
+?>
+
+
+
+<button class="btn <?php echo $btn_class; ?>">
+    <?php echo $percentage; ?>%
+</button>
+                                    </td>
+
+									
+															<td>
+															<?php
+																// Cek jenis pengadaan dan tampilkan kode yang sesuai
+																if ($data['jenis_pengadaan'] == 'Pengadaan Langsung' || $data['jenis_pengadaan'] == 'Penunjukan Langsung LOI') {
+																	echo $data['buat_po1'];
+																}elseif ($data['jenis_pengadaan'] == 'Penunjukan Langsung' || $data['jenis_pengadaan'] == 'Perlelangan Terbatas'){
+																	echo $data['buat_po2'];
+																}
+																?>
+															</td>
+
+												</tr>
+											<?php endforeach; ?>
+
+										</tbody>
+									</table>
+								</div>
+							</div>
+</div>
+</div>  
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

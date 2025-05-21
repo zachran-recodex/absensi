@@ -1,0 +1,47 @@
+public function get_performance_data($status = 'Po Closed') {
+		// Select fields
+		$this->db->select('
+			data_input.id_input,
+			data_input.tgl_per_masuk,
+			data_input.nm_pengadaan,
+			data_input.nilai_pr,
+			data_input.status,
+			data_input.tgl_input,
+			data_input.jenis_pengadaan,
+			data_input.waktu_pelaksanaan,
+			data_input.case,
+			user.nama as user_nama,
+			pengadaan_langsung.id_pengadaan_langsung,
+			pengadaan_langsung.upm as upm1,
+			pengadaan_langsung.approve_tm as approve_tm1,
+			pengadaan_langsung.nego as nego1,
+			pengadaan_langsung.kirim_dok as kirim_dok1,
+			pengadaan_langsung.nego_skp as nego_skp1,
+			pengadaan_langsung.kirim_kontrak as kirim_kontrak1,
+			pengadaan_langsung.buat_po as buat_po1,
+			penunjukan_langsung.id_penunjukan_langsung,
+			penunjukan_langsung.upm as upm2,
+			penunjukan_langsung.approve_tm as approve_tm2,
+			penunjukan_langsung.undangan as undangan1,
+			penunjukan_langsung.masuk_dok as masuk_dok1,
+			penunjukan_langsung.nego_skp as nego_skp2,
+			penunjukan_langsung.kirim_skp as kirim_skp1,
+			penunjukan_langsung.buat_kontrak as buat_kontrak1,
+			penunjukan_langsung.kirim_kontrak as kirim_kontrak2,
+			penunjukan_langsung.buat_po as buat_po2,
+			 YEAR(data_input.tgl_input) as tahun
+		');
+		
+		// From and joins
+		$this->db->from('data_input');
+		$this->db->join('user', 'data_input.id_user = user.id_user', 'left');
+		$this->db->join('pengadaan_langsung', 'data_input.id_input = pengadaan_langsung.id_input', 'left');
+		$this->db->join('penunjukan_langsung', 'data_input.id_input = penunjukan_langsung.id_input', 'left');
+		
+		
+		// Add filters
+		$this->db->where('data_input.status', $status);
+		
+		// Execute query
+		$query = $this->db->get();
+		return $query->result_array();
